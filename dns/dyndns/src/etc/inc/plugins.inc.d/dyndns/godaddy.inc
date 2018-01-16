@@ -41,7 +41,8 @@
 class GodaddyDns
 {
 	/* Api Variables */
-	const API_URL = "https://api.godaddy.com/v1/domains/%s/records/%s/%s"; //Godaddy DNS Api URL | Domain Name - Record Type - Name (Subdomain)
+	//const API_URL = 'https://api.ote-godaddy.com/v1/domains/%s/records/%s/%s';
+	const API_URL = 'https://api.godaddy.com/v1/domains/%s/records/%s/%s'; //Godaddy DNS Api URL | Domain Name - Record Type - Name (Subdomain)
 	protected $_ssoKey; //Godaddy Developer Key
 	protected $_ssoSecret; //Godaddy Developer Secret
 	protected $_host;
@@ -74,59 +75,94 @@ class GodaddyDns
 	*/
 	public function updateDns($host = null, $useIPv6 = false, $newIp)
 	{
-		$this->_host = $this->parseHost($host);
+		$this->parseHost($host);
 		$this->_recordType = ($useIPv6 ? "AAAA" : "A"); //Set record type
 
-		$this->setCurlHandle(); //Set curl handler
+		$ip = $this->getDns();
 
-		$this->getDns();
-
-		// if($newIp != $oldIp)
-		// {
-
-		// }
-
+		//Check if the needs to be updated
+		if($newIp != $this->getDns()["data"]){
+			if(!$this->putDns($newIp)){ //Update DNS record
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
 	} 
 
-	private function setCurlHandle($method = CURLOPT_HTTPGET)
+	private function getDns()
 	{
-		if(is_null($this->_curlHandle)) curl_close($this->_curlHandle); //Close existing connection
-		$this->_curlHandle = curl_init(getUrl()); //Initialize Curl
-		//curl_setopt($this->_curlHandle, $method, true);
-		curl_setopt($this->_curlHandle, CURLOPT_HEADER, //Set Url
+		$this->setCurlHandle(); //Set curl handler
+		$responce = json_decode(curl_exec($this->_curlHandle), true); //Get DNS from godaddy
+
+		if(isset($responce["message"]) || count($responce) < 0){
+			//Error Check
+		}
+		else if(count($responce) < 0){
+			return $responce;
+		}
+	}
+
+	private function putDns($newIp)
+	{
+		$this->setCurlHandle('PUT'); //Set curl handler
+		curl_setopt($this->_curlHandle, CURLOPT_POSTFIELDS, '[{ "data":"8.8.8.8", "ttl":600 }]');
+		$responce = json_decode(curl_exec($this->_curlHandle), true);
+
+		switch(curl_getinfo($this->_curlHandle, CURLINFO_RESPONSE_CODE)){
+			case 200:
+				return true;
+				break;
+			case 400:
+			case 403:
+			case 401:
+			case 404:
+			case 422:
+			case 429:
+			case 500:
+			case 504:
+				//Throw Error
+				break;
+		}
+	}
+
+	private function setCurlHandle($method = 'GET')
+	{
+		if(!is_null($this->_curlHandle)) curl_close($this->_curlHandle); //Close existing connection
+		$this->_curlHandle = curl_init($this->getUrl()); //Initialize Curl
+		curl_setopt($this->_curlHandle, CURLOPT_CUSTOMREQUEST, $method);
+		curl_setopt($this->_curlHandle, CURLOPT_RETURNTRANSFER, true);
+		curl_setopt($this->_curlHandle, CURLOPT_HTTPHEADER, //Set Url
 		[
-			'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-            'Authorization' => 'sso-key {$this->_ssoSecret}:{$this->_ssoKey}'
+			'Content-Type: application/json',
+            'Accept: application/json',
+            "Authorization: sso-key {$this->_ssoKey}:{$this->_ssoSecret}"
 		]);
 	}
 
-	private function parseHost()
+	private function parseHost($host)
 	{
 		$parseUrl = explode('.', parse_url(
-			strpos($this->_host, '://') ? $this->_host : "http://{$this->_host}"
-		));
+			strpos($host, '://') ? $host : "http://{$host}"
+		)["host"]);
+
         $this->_host = [ 
         	"domain" => implode('.', array_slice($parseUrl, count($parseUrl) - 2, 2)), 
-        	"name" => (implode('.', array_slice($parseUrl, 0, count($parseUrl) - 2)) ?: null)
-        ];
+			"name" => (implode('.', array_slice($parseUrl, 0, count($parseUrl) - 2)) ?: null)
+		];
 	}
 
 	private function getUrl()
 	{
-		return sprintf(API_UR, 
-			$this->host["domain"], //Domain
+		return sprintf(self::API_URL, 
+			$this->_host["domain"], //Domain
 			$this->_recordType, //Record Type
 			($this->_host["name"]?: "@")  //Name
 		);
 	}
-
-	private function getDns()
-	{
-		$result = curl_exec($this->_curlHandle);
-		echo "";
-	}
 }
 
-$test = new GodaddyDns("2s83f1JviF_98V5UzArCx4391xokTj5LY", "98V7sFXoGhKE4M8QDh1c4t");
-$test->updateDns("test.com", false, "8.8.8.8");
+$test = new GodaddyDns("9uJAe5QhY9V_UzeSBfgHTwQZjKnwVw233M", "2VxG5uqUm9JNLbKiMLXA1T");
+echo $test->updateDns("ebotbuy.com", false, "8.8.8.8");
