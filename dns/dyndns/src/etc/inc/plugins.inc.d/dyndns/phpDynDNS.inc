@@ -11,7 +11,7 @@
  *    - EasyDNS (easydns.com)
  *    - DHS (www.dhs.org)
  *    - HN (hn.org) -- incomplete checking!
- *    - DynS (dyns.org)
+ *    - DynS (dyns.org) asdasd
  *    - ZoneEdit (zoneedit.com)
  *    - FreeDNS (freedns.afraid.org)
  *    - Loopia (loopia.se)
@@ -38,6 +38,7 @@
  *    - Oray (oray.com)
  *    - regfish (regfish.de)
  *    - regfish IPv6 (regfish.de)
+ *    - Godaddy (api.godaddy.com)
  * +----------------------------------------------------+
  *  Requirements:
  *    - PHP version 4.0.2 or higher with the CURL Library and the PCRE Library
@@ -88,6 +89,8 @@
  *  regfish             - Last Tested: 15 August 2017
  *  regfish v6          - Last Tested: 15 August 2017
  *  Amazon Route53 v6   - Last Tested: 19 November 2017
+ *  Godaddy             - Last Tested: 15 January 18
+ *  Godaddy v6          - Last Tested: 15 January 18
  * +====================================================+
  *
  * @author    E.Kristensen
@@ -240,6 +243,7 @@ class updatedns
             case 'he-net-v6':
             case 'regfish-v6':
             case 'route53-v6':
+            case 'godaddy-v6':
                 $this->_useIPv6 = true;
                 break;
             default:
@@ -319,6 +323,8 @@ class updatedns
                 case 'strato':
                 case 'staticcling':
                 case 'zoneedit':
+                case 'godaddy': //Added 1/5/15
+                case 'godaddy-v6': //Added 1/5/15
                     $this->_update();
                     if ($this->_dnsDummyUpdateDone == true) {
                         // If a dummy update was needed, then sleep a while and do the update again to put the proper address back.
@@ -348,7 +354,7 @@ class updatedns
             log_error("Dynamic DNS ({$this->_dnsHost} via {$this->_dnsServiceList[$this->_dnsService]}): _update() starting.");
         }
 
-        if ($this->_dnsService != 'ods' and $this->_dnsService != 'route53' and $this->_dnsService != 'route53-v6') {
+        if (!in_array($this->_dnsService, ['ods', 'route53', 'route53-v6', 'godaddy', 'godaddy-v6'], true)) //Updated 1/15/18
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_HEADER, 0);
             curl_setopt($ch, CURLOPT_USERAGENT, $this->_UserAgent);
@@ -816,10 +822,28 @@ class updatedns
                 $server = "https://dyndns.regfish.de/?fqdn={$this->_dnsHost}&{$family}={$this->_dnsIP}&forcehost=1&token={$this->_dnsUser}";
                 curl_setopt($ch, CURLOPT_URL, $server);
                 break;
+            case 'godaddy':
+            case 'godaddy-v6':
+                /* Define Variables */
+                $parseUrl = explode('.', parse_url($this->_host));
+                $domain = implode('.', array_slice($parseUrl, count($parseUrl) - 2, 2));
+                $subDomain = implode('.', array_slice($host, 0, count($host) - 2 ));
+                $ipvType = ($this->_useIPv6 ? 'AAAA' : "A");
+                $headers = [
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": "sso-key {this->_dnsUser}:{$this->_dnsPass}",
+                ];
+                $server = "https://api.godaddy.com/v1/domains/{$domain}/records/{$ipvType}/{subDomain}";
+
+                if()
+
+
+                break;
             default:
                 break;
         }
-        if ($this->_dnsService != 'ods' and $this->_dnsService != 'route53' and $this->_dnsService != 'route53-v6') {
+        if ($this->_dnsService != 'ods' and $this->_dnsService != 'route53' and $this->_dnsService != 'route53-v6') { //UPDATE ME PLEASE GOD!
             $data = curl_exec($ch);
             $this->_checkStatus($ch, $data);
             @curl_close($ch);
