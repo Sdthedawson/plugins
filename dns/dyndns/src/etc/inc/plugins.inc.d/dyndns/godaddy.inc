@@ -41,8 +41,8 @@
 class GodaddyDns
 {
 	/* Api Variables */
-	//const API_URL = 'https://api.ote-godaddy.com/v1/domains/%s/records/%s/%s';
 	const API_URL = 'https://api.godaddy.com/v1/domains/%s/records/%s/%s'; //Godaddy DNS Api URL | Domain Name - Record Type - Name (Subdomain)
+	const TEST_API_URL = 'https://api.ote-godaddy.com/v1/domains/%s/records/%s/%s'; //Incase anyone wants it...
 	protected $_ssoKey; //Godaddy Developer Key
 	protected $_ssoSecret; //Godaddy Developer Secret
 	protected $_host;
@@ -78,8 +78,6 @@ class GodaddyDns
 		$this->parseHost($host);
 		$this->_recordType = ($useIPv6 ? "AAAA" : "A"); //Set record type
 
-		$ip = $this->getDns();
-
 		//Check if the needs to be updated
 		if($newIp != $this->getDns()["data"]){
 			if(!$this->putDns($newIp)){ //Update DNS record
@@ -90,25 +88,25 @@ class GodaddyDns
 				return false;
 			}
 		}
-	} 
+		return null; //No need to update
+	}
 
 	private function getDns()
 	{
 		$this->setCurlHandle(); //Set curl handler
 		$responce = json_decode(curl_exec($this->_curlHandle), true); //Get DNS from godaddy
-
 		if(isset($responce["message"]) || count($responce) < 0){
-			//Error Check
+			//Error Handle
 		}
-		else if(count($responce) < 0){
-			return $responce;
+		else if(isset($responce[0])){
+			return $responce[0];
 		}
 	}
 
 	private function putDns($newIp)
 	{
 		$this->setCurlHandle('PUT'); //Set curl handler
-		curl_setopt($this->_curlHandle, CURLOPT_POSTFIELDS, '[{ "data":"8.8.8.8", "ttl":600 }]');
+		curl_setopt($this->_curlHandle, CURLOPT_POSTFIELDS, "[{ \"data\":\"{$newIp}\" }]");
 		$responce = json_decode(curl_exec($this->_curlHandle), true);
 
 		switch(curl_getinfo($this->_curlHandle, CURLINFO_RESPONSE_CODE)){
@@ -123,6 +121,7 @@ class GodaddyDns
 			case 429:
 			case 500:
 			case 504:
+			default:
 				//Throw Error
 				break;
 		}
@@ -165,4 +164,6 @@ class GodaddyDns
 }
 
 $test = new GodaddyDns("9uJAe5QhY9V_UzeSBfgHTwQZjKnwVw233M", "2VxG5uqUm9JNLbKiMLXA1T");
-echo $test->updateDns("ebotbuy.com", false, "8.8.8.8");
+if($test->updateDns("ebotbuy.com", false, "8.8.8.8") == false){
+	print "SUCCESS!";
+}

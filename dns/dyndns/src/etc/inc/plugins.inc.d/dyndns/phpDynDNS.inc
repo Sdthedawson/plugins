@@ -355,6 +355,7 @@ class updatedns
         }
 
         if (!in_array($this->_dnsService, ['ods', 'route53', 'route53-v6', 'godaddy', 'godaddy-v6'], true)) //Updated 1/15/18
+        {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_HEADER, 0);
             curl_setopt($ch, CURLOPT_USERAGENT, $this->_UserAgent);
@@ -823,22 +824,10 @@ class updatedns
                 curl_setopt($ch, CURLOPT_URL, $server);
                 break;
             case 'godaddy':
-            case 'godaddy-v6':
-                /* Define Variables */
-                $parseUrl = explode('.', parse_url($this->_host));
-                $domain = implode('.', array_slice($parseUrl, count($parseUrl) - 2, 2));
-                $subDomain = implode('.', array_slice($host, 0, count($host) - 2 ));
-                $ipvType = ($this->_useIPv6 ? 'AAAA' : "A");
-                $headers = [
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": "sso-key {this->_dnsUser}:{$this->_dnsPass}",
-                ];
-                $server = "https://api.godaddy.com/v1/domains/{$domain}/records/{$ipvType}/{subDomain}";
-
-                if()
-
-
+            case 'godaddy-v6': //Added 1/16/17. The class handles it all...
+                $gd = new GodaddyDns($this->_dnsUser, $this->_dnsPass);
+                $result = $gd->updateDns($this->_dnsHost, $this->_useIPv6, $this->_dnsIP);
+                $this->_checkStatus(0, $result);
                 break;
             default:
                 break;
@@ -861,7 +850,7 @@ class updatedns
             log_error("Dynamic DNS ({$this->_dnsHost}): Current Service: {$this->_dnsService}");
         }
         $successful_update = false;
-        if ($this->_dnsService != 'ods' and $this->_dnsService != 'route53' and $this->_dnsService != 'route53-v6' && @curl_error($ch)) {
+        if (!in_array($this->_dnsService, ['ods', 'route53', 'route53-v6', 'godaddy', 'godaddy-v6'], true) && @curl_error($ch)) { //Updated 1/16/17
             $status = "Curl error occurred: " . curl_error($ch);
             log_error($status);
             $this->status = $status;
@@ -1251,6 +1240,10 @@ class updatedns
                     log_error("Dynamic DNS: PAYLOAD: {$data}");
                     $this->_debug($data);
                 }
+            case "godaddy":
+            case "godaddy-v6":
+                $successful_update = TRUE;
+                break;
             default:
                 break;
         }

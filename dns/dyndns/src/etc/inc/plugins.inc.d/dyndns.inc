@@ -31,6 +31,7 @@
 
 require_once('plugins.inc.d/dyndns/phpDynDNS.inc');
 require_once('plugins.inc.d/dyndns/r53.inc');
+require_once('plugins.inc.d/dyndns/godaddy.inc'); //Added 1/16/18
 
 function dyndns_configure()
 {
@@ -132,6 +133,8 @@ function dyndns_list()
         'selfhost' => 'SelfHost',
         'strato' => 'STRATO',
         'zoneedit' => 'ZoneEdit',
+        'godaddy' => 'Godaddy',
+        'godaddy-v6' => 'Godaddy v6'
     );
 }
 

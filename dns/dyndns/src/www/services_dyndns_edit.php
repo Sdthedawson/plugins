@@ -325,6 +325,7 @@ include("head.inc");
                         <?= gettext("Username is required for all types except Namecheap, FreeDNS and Custom Entries.");?>
                         <br /><?= gettext('Route 53: Enter your Access Key ID.') ?>
                         <br /><?= gettext('Duck DNS: Enter your Token.') ?>
+                        <br /><?= gettext('Godaddy: Enter your Developer Key. (https://developer.godaddy.com/keys/)') //Added 1/16/17 ?>
                         <br /><?= gettext('For Custom Entries, Username and Password represent HTTP Authentication username and passwords.') ?>
                       </output>
                     </td>
@@ -337,6 +338,7 @@ include("head.inc");
                         <?=gettext('FreeDNS (freedns.afraid.org): Enter your "Authentication Token" provided by FreeDNS.') ?>
                         <br /><?= gettext('Route 53: Enter your Secret Access Key.') ?>
                         <br /><?= gettext('Duck DNS: Leave blank.') ?>
+                        <br /><?= gettext('Godaddy: Enter your Developer Secret.') //Added 1/16/17 ?>
                       </output>
                     </td>
                   </tr>
