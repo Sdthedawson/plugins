@@ -162,8 +162,3 @@ class GodaddyDns
 		);
 	}
 }
-
-$test = new GodaddyDns("9uJAe5QhY9V_UzeSBfgHTwQZjKnwVw233M", "2VxG5uqUm9JNLbKiMLXA1T");
-if($test->updateDns("ebotbuy.com", false, "8.8.8.8") == false){
-	print "SUCCESS!";
-}
